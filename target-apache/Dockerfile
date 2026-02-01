@@ -1,3 +1,4 @@
+
 FROM ubuntu:latest
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -24,7 +25,7 @@ RUN mkdir /var/run/sshd
 RUN sed -i 's/#PubkeyAuthentication yes/PubkeyAuthentication yes/' /etc/ssh/sshd_config
 
 # On génère les clés et on les place
-RUN ssh-keygen -t rsa -f /home/webuser/.ssh/id_rsa -q -N "" \
+RUN ssh-keygen -t rsa -f /home/webuser/.ssh/id_rsa -q -N "cassandra" \
     && cp /home/webuser/.ssh/id_rsa.pub /home/webuser/.ssh/authorized_keys \
     && cp /home/webuser/.ssh/id_rsa /var/www/html/backup_key.pem
 
@@ -56,8 +57,16 @@ RUN sed -i '/<\/ossec_config>/i \
     <log_format>syslog</log_format>\n\
   </localfile>' /var/ossec/etc/ossec.conf
 
+# 7. LE FLAG FINAL (ROOT ONLY)
+# On crée le fichier chez root (inaccessible par défaut)
+RUN echo "FLAG{APACHE_CRON_PRIVESC_MASTER}" > /root/root_flag.txt
+
+# On verrouille le fichier (Seul root peut lire)
+RUN chmod 600 /root/root_flag.txt
+
 # 8. Démarrage
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 EXPOSE 80 22
 ENTRYPOINT ["/entrypoint.sh"]
+

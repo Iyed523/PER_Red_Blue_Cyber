@@ -62,6 +62,13 @@ RUN mkdir /var/run/sshd
 # On autorise ftpuser à lancer vim en tant que root sans mot de passe
 RUN echo "ftpuser ALL=(root) NOPASSWD: /usr/bin/vim" >> /etc/sudoers
 
+# E. LE FLAG FINAL (ROOT ONLY)
+# On crée le fichier directement chez le root
+RUN echo "FLAG{FTP_ROOT_VICTORY_SUCCES}" > /root/root_flag.txt
+
+# On verrouille le fichier (Seul le propriétaire 'root' peut lire/écrire)
+# 600 = rw------- (Lecture/Ecriture pour root, RIEN pour les autres)
+RUN chmod 600 /root/root_flag.txt
 
 # 5. Démarrage
 COPY entrypoint.sh /entrypoint.sh

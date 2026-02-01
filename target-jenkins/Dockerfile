@@ -7,7 +7,7 @@ USER root
 # 2. Installation des outils de base
 RUN apt-get update && apt-get install -y \
     curl gnupg apt-transport-https lsb-release \
-    iputils-ping \
+    iputils-ping sudo vim  \
     && rm -rf /var/lib/apt/lists/*
 
 # 3. Installation de l'Agent Wazuh
@@ -20,7 +20,17 @@ RUN apt-get update && WAZUH_MANAGER="wazuh.manager" WAZUH_AGENT_VERSION="4.9.0-1
 # Jenkins est vulnérable "par design" via sa console de script si on n'a pas de mot de passe.
 # On s'assure juste que l'utilisateur a les droits.
 
-# 5. Script de démarrage personnalisé
+# 4. Le Flag Final (Root Only)
+# On crée le fichier chez root
+RUN echo "FLAG{JENKINS_GROOVY_TO_ROOT_MASTER}" > /root/root_flag.txt
+# On le verrouille (seul root peut le lire)
+RUN chmod 600 /root/root_flag.txt
+
+# 5. La Faille d'Escalade (Privesc)
+# On autorise l'utilisateur 'jenkins' à lancer VIM en tant que root
+RUN echo "jenkins ALL=(root) NOPASSWD: /usr/bin/vim" >> /etc/sudoers
+
+# 6. Script de démarrage personnalisé
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
