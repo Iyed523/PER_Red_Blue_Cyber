@@ -1,6 +1,0 @@
-[mysqld]
-# On force l'écoute sur le réseau (pas que localhost)
-bind-address = 0.0.0.0
-# On force les logs d'erreur
-log_error = /var/log/mysql/error.log
-log_warnings = 2

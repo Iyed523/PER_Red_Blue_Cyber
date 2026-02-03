@@ -1,0 +1,66 @@
+version: '3.7'
+
+services:
+  # =================================================================
+  # RED TEAM (L'ATTAQUANT - ACCESSIBLE VIA SSH)
+  # =================================================================
+  kali.attacker:
+    build: ../kali-custom     # <--- On construit notre image custom
+    container_name: kali_easy
+    hostname: kali
+    tty: true
+    stdin_open: true
+    privileged: true
+    ports:
+      - "2222:22"             # <--- PORT MAGIC : On entre par 2222, on arrive sur 22
+    networks:
+      - net_easy
+  # =================================================================
+  # VICTIMES (Easy)
+  # =================================================================
+  target.ftp:
+    build: ./target-ftp       # Le dossier est juste à côté maintenant
+    container_name: target_ftp_easy
+    hostname: target-ftp
+    environment:
+      - WAZUH_MANAGER_IP=172.17.0.1  # IP de ton Windows (Wifi)
+    networks:
+      - net_easy
+
+  target.jenkins:
+    build: ./target-jenkins
+    container_name: target_jenkins_easy
+    hostname: target-jenkins
+    user: root
+    environment:
+      - JAVA_OPTS=-Djenkins.install.runSetupWizard=false
+      - WAZUH_MANAGER_IP=172.17.0.1
+    ports:
+      - "8081:8080"
+    networks:
+      - net_easy
+
+  target.samba:
+    build: ./target-samba
+    container_name: target_samba_easy
+    hostname: target-samba
+    environment:
+      - WAZUH_MANAGER_IP=172.17.0.1
+    networks:
+      - net_easy
+
+  target.apache:
+    build: ./target-apache
+    container_name: target_apache_easy
+    hostname: target-apache
+    environment:
+      - WAZUH_MANAGER_IP=172.17.0.1
+    networks:
+      - net_easy
+
+# =================================================================
+# RÉSEAU LOCAL (Juste pour ce labo)
+# =================================================================
+networks:
+  net_easy:
+    driver: bridge
