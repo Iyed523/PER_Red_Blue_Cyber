@@ -1,0 +1,92 @@
+version: '3.8'
+
+services:
+  # =================================================================
+  # RED TEAM (L'ATTAQUANT)
+  # =================================================================
+  kali.attacker:
+    build: ../kali-custom
+    container_name: kali_medium
+    hostname: kali
+    tty: true
+    stdin_open: true
+    privileged: true
+    ports:
+      - "2222:22" # SSH accessible depuis ta machine hôte
+    networks:
+      net_public_medium:
+        ipv4_address: 172.25.0.10
+    environment:
+      - WAZUH_MANAGER_IP=172.17.0.1
+
+  # =================================================================
+  # DMZ (ACCESSIBLE DEPUIS KALI)
+  # =================================================================
+  target_web:
+    build: ./target-web
+    container_name: target_web_medium
+    hostname: target-web
+    privileged: true
+    restart: always
+    networks:
+      net_public_medium:
+        ipv4_address: 172.25.0.40    # Face Publique (Visible par Kali)
+      net_private_medium:
+        ipv4_address: 172.23.0.10    # Face Privée (Lien vers les autres)
+    environment:
+      - WAZUH_MANAGER_IP=172.17.0.1
+
+  # =================================================================
+  # RÉSEAU INTERNE (INVISIBLE DEPUIS KALI - PIVOT NÉCESSAIRE)
+  # =================================================================
+  target_ftp:
+    build: ./target-ftp
+    container_name: target_ftp_medium
+    hostname: target-ftp
+    privileged: true
+    restart: always
+    networks:
+      net_private_medium:
+        ipv4_address: 172.23.0.20
+    environment:
+      - WAZUH_MANAGER_IP=172.17.0.1
+
+  target_samba:
+    build: ./target-samba
+    container_name: target_samba_medium
+    hostname: target-samba
+    privileged: true
+    restart: always
+    networks:
+      net_private_medium:
+        ipv4_address: 172.23.0.30
+    environment:
+      - WAZUH_MANAGER_IP=172.17.0.1
+
+  target_jenkins:
+    build: ./target-jenkins
+    container_name: target_jenkins_medium
+    hostname: target-jenkins
+    privileged: true
+    restart: always
+    networks:
+      net_private_medium:
+        ipv4_address: 172.23.0.40  # IP corrigée (différente de Samba)
+    environment:
+      - WAZUH_MANAGER_IP=172.17.0.1
+
+# =================================================================
+# DÉFINITION DES RÉSEAUX
+# =================================================================
+networks:
+  net_public_medium:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.25.0.0/24
+
+  net_private_medium:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.23.0.0/24
