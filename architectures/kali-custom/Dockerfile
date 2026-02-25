@@ -1,29 +1,37 @@
 FROM kalilinux/kali-rolling
 
-# 1. Mise à jour et installation des outils de base + SSH
+# Éviter les questions pendant l'installation
+ENV DEBIAN_FRONTEND=noninteractive
+
+# 1. Installation du serveur SSH et des outils de base pour le TP
 RUN apt-get update && apt-get install -y \
     openssh-server \
-    iproute2 \
     net-tools \
-    nano \
-    nmap \
     iputils-ping \
-    proxychains4 \
-    ftp \
-    smbclient \
+    iproute2 \
+    curl \
+    wget \
+    nano \
+    vim \
+    nmap \
     netcat-traditional \
+    proxychains4 \
+    python3 \
     && rm -rf /var/lib/apt/lists/*
 
-# 2. Configuration de SSH
+# 2. Configuration SSH (Indispensable pour Docker)
 RUN mkdir -p /var/run/sshd
-# On autorise le login en root
+# Autoriser le login Root
 RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+# Correction d'un bug fréquent de PAM dans Docker qui déconnecte immédiatement
+RUN sed -i 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' /etc/pam.d/sshd
 
-# 3. Définition du mot de passe (root / toor)
+# 3. Définition du mot de passe root (root:root)
 RUN echo 'root:root' | chpasswd
 
-# 4. Ouverture du port 22
+# 4. On expose le port
 EXPOSE 22
 
-# 5. Lancement de SSH au démarrage du conteneur
-CMD ["/usr/sbin/sshd", "-D"]
+# 5. DÉMARRAGE AUTOMATIQUE
+# On lance SSH et on empêche le conteneur de s'éteindre
+CMD service ssh start && tail -f /dev/null
